@@ -23,13 +23,17 @@ async def fetch_pdf_link(session, doi):
 async def fetch_semanticscholar(session, title):
     """Fetches metadata from Semantic Scholar Graph API."""
     url = "https://api.semanticscholar.org/graph/v1/paper/search"
-    params = {"query": title, "limit": 1, "fields": "title,authors,year,venue,externalIds"}
+    params = {"query": title, "limit": 3, "fields": "title,authors,year,venue,externalIds,citationCount"}
     try:
         async with session.get(url, params=params, timeout=5) as r:
             if r.status == 200:
                 data = await r.json()
-                if data.get("data"):
-                    paper = data["data"][0]
+                items = data.get("data", [])
+                # Sort by citation count to avoid duplicates
+                items.sort(key=lambda x: x.get("citationCount", 0), reverse=True)
+                
+                if items:
+                    paper = items[0]
                     if similarity(title, paper.get("title", "")) > 0.8:
                         return {
                             "DOI": paper.get("externalIds", {}).get("DOI"),
@@ -87,11 +91,19 @@ async def fetch_crossref(session, doi=None, title=None):
                 if r.status == 200: return (await r.json())["message"], "crossref-doi"
         if title:
             url = "https://api.crossref.org/works"
-            params = {"query.title": title, "rows": 2}
+            # Increased rows to 5 to cast a wider net
+            params = {"query.title": title, "rows": 5}
             async with session.get(url, params=params, timeout=5) as r:
                 if r.status == 200:
                     data = await r.json()
-                    for item in data["message"]["items"]:
+                    items = data["message"]["items"]
+                    
+                    # --- SMART FIX: Sort by Citation Count ---
+                    # This ensures we pick the "Real" paper (100k citations)
+                    # over a fake/reprint (0 citations)
+                    items.sort(key=lambda x: x.get("is-referenced-by-count", 0), reverse=True)
+                    
+                    for item in items:
                         if similarity(title, item.get("title", [""])[0]) > 0.8:
                             return item, "crossref-title"
     except: pass
