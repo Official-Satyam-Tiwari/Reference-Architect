@@ -223,14 +223,16 @@ if uploaded_file:
 
         st.markdown("---")
 
-        tab1, tab2, tab3 = st.tabs(["📈 Analytics & Clean Data", "⚠️ Attention Needed", "❌ Unverified"])
+        tab1, tab2, tab3 = st.tabs(["📈 All Citations Overview", "⚠️ Attention Needed", "❌ Unverified"])
         
         with tab1:
             row1_col1, row1_col2 = st.columns([2, 1])
             with row1_col1:
-                st.markdown("#### Clean Citations")
+                st.markdown("#### Master Citation List")
+                # --- FIX 3: Removed Filter ---
+                # Showing ALL entries now, not just score >= 90
                 st.dataframe(
-                    df[df["Score"] >= 90],
+                    df,
                     column_config={
                         "Link": st.column_config.LinkColumn("Source", display_text="Open"),
                         "PDF": st.column_config.LinkColumn("PDF", display_text="Download"),
@@ -284,11 +286,13 @@ if uploaded_file:
             st.error(f"**{len(missing)}** entries could not be found in any database.")
             st.markdown("Use the links below to manually search Google Scholar.")
             for r in missing:
-                field_check = r.get('field_check', {})
-                title_data = field_check.get('title', {}) if field_check else {}
-                title_text = title_data.get('bibtex', '') if title_data else r.get('key', '')
-                q = urllib.parse.quote(title_text)
+                # --- FIX 4: Use Title fallback ---
+                title_query = r.get("bibtex_title") or r.get("key", "")
+                
+                clean_query = title_query.replace("{", "").replace("}", "")
+                q = urllib.parse.quote(clean_query)
                 s_url = f"https://scholar.google.com/scholar?q={q}"
+                
                 with st.container():
                     c1, c2 = st.columns([0.8, 0.2])
                     with c1:

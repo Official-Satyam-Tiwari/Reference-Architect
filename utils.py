@@ -24,7 +24,6 @@ def format_source_name(source_code):
         "arxiv": "arXiv (Preprint)",
         "semanticscholar": "Semantic Scholar"
     }
-    # Safely get from mapping or capitalize the code
     return mapping.get(source_code, str(source_code).title())
 
 def make_bibtex(key, data):
@@ -100,15 +99,17 @@ def to_csv(results):
     rows = []
     for r in results:
         clean = r.get("clean_data", {})
+        # --- FIX 2: Fallback Logic ---
+        # If 'clean' (API data) is empty, use 'bibtex_*' (Original)
         row = {
             "Citation Key": r.get("key"),
             "Confidence Score": f"{r['confidence']}%",
             "Verification Status": "Verified" if r["confidence"] >= 90 else "Needs Attention" if r["exists"] else "Not Found",
             "Source Found": format_source_name(r.get("resolution", "None")),
             "DOI": clean.get("doi") or r.get("verified_doi"),
-            "Title (Verified)": clean.get("title"),
-            "Year (Verified)": clean.get("year"),
-            "Journal (Verified)": clean.get("journal"),
+            "Title": clean.get("title") or r.get("bibtex_title"),
+            "Year": clean.get("year") or r.get("bibtex_year"),
+            "Journal": clean.get("journal") or r.get("bibtex_journal"),
             "PDF Link": r.get("pdf_link"),
             "ArXiv ID": clean.get("arxiv_id")
         }

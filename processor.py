@@ -16,8 +16,17 @@ async def process_entry(entry, session, sem):
             "pdf_link": None, "field_check": {}, "clean_data": {}, "warnings": []
         }
 
+    # --- FIX 1: Store original data for fallback (CSV/Search) ---
+    bibtex_title = entry.get("title", "")
+    bibtex_year = entry.get("year", "")
+    bibtex_journal = entry.get("journal", "")
+
     status = {
-        "key": key, "exists": False, "verified_doi": None, "doi_url": None, "pdf_link": None,
+        "key": key,
+        "bibtex_title": bibtex_title, # <--- Added for Google Scholar Search
+        "bibtex_year": bibtex_year,   # <--- Added for CSV fallback
+        "bibtex_journal": bibtex_journal, # <--- Added for CSV fallback
+        "exists": False, "verified_doi": None, "doi_url": None, "pdf_link": None,
         "resolution": None, "confidence": 0, "field_check": {}, "clean_data": {}, "warnings": []
     }
 
