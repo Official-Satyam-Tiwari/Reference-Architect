@@ -1,25 +1,40 @@
 import difflib
+import pandas as pd
 
 def normalize(text):
     """Aggressively normalizes text for comparison."""
     if not text: return ""
-    # Remove braces, punctuation, extra spaces
     text = str(text).replace("{", "").replace("}", "").replace(".", " ").replace(",", " ").replace("-", " ")
     return " ".join(text.lower().split())
 
 def similarity(a, b):
-    """Calculates fuzzy similarity ratio between two strings (0.0 to 1.0)."""
+    """Calculates fuzzy similarity ratio (0.0 to 1.0)."""
     return difflib.SequenceMatcher(None, normalize(a), normalize(b)).ratio()
 
 def format_source_name(source_code):
     """Converts internal codes to readable names."""
-    if not source_code: return "Unknown"
-    return source_code.replace("-", " ").replace("id", "ID").title()
+    if not source_code:
+        return "Unknown"  # <-- Handle None safely
+        
+    mapping = {
+        "crossref-doi": "Crossref (DOI)",
+        "crossref-title": "Crossref (Search)",
+        "openalex": "OpenAlex",
+        "pubmed-full": "PubMed",
+        "arxiv": "arXiv (Preprint)",
+        "semanticscholar": "Semantic Scholar"
+    }
+    # Safely get from mapping or capitalize the code
+    return mapping.get(source_code, str(source_code).title())
 
 def make_bibtex(key, data):
     """Generates a clean BibTeX string from verified data."""
     if not data: return ""
-    bib = f"@article{{{key},\n"
+    entry_type = "article"
+    if "arxiv" in str(data.get('journal', '')).lower():
+        entry_type = "misc"
+
+    bib = f"@{entry_type}{{{key},\n"
     
     fields = [
         ('author', data.get('author')),
@@ -29,7 +44,9 @@ def make_bibtex(key, data):
         ('volume', data.get('volume')),
         ('number', data.get('number')),
         ('pages', data.get('pages')),
-        ('doi', data.get('doi'))
+        ('doi', data.get('doi')),
+        ('eprint', data.get('arxiv_id')),
+        ('archivePrefix', 'arXiv' if data.get('arxiv_id') else None)
     ]
     
     for field, value in fields:
@@ -45,10 +62,8 @@ def check_journal_match(bib_journal, api_journal):
     norm_bib = normalize(bib_journal)
     norm_api = normalize(api_journal)
     
-    # 1. Direct fuzzy match
     if difflib.SequenceMatcher(None, norm_bib, norm_api).ratio() > 0.6: return "ok"
     
-    # 2. Abbreviation Heuristic
     tokens_bib = norm_bib.split()
     tokens_api = norm_api.split()
     short, long = (tokens_bib, tokens_api) if len(tokens_bib) < len(tokens_api) else (tokens_api, tokens_bib)
@@ -77,3 +92,27 @@ def check_authors(bib_authors, api_authors):
         if norm_first in norm_auth or norm_auth in norm_first: return True
         if difflib.SequenceMatcher(None, norm_first, norm_auth).ratio() > 0.7: return True
     return False
+
+def to_csv(results):
+    """Converts verification results to a CSV string for export."""
+    if not results: return ""
+    
+    rows = []
+    for r in results:
+        clean = r.get("clean_data", {})
+        row = {
+            "Citation Key": r.get("key"),
+            "Confidence Score": f"{r['confidence']}%",
+            "Verification Status": "Verified" if r["confidence"] >= 90 else "Needs Attention" if r["exists"] else "Not Found",
+            "Source Found": format_source_name(r.get("resolution", "None")),
+            "DOI": clean.get("doi") or r.get("verified_doi"),
+            "Title (Verified)": clean.get("title"),
+            "Year (Verified)": clean.get("year"),
+            "Journal (Verified)": clean.get("journal"),
+            "PDF Link": r.get("pdf_link"),
+            "ArXiv ID": clean.get("arxiv_id")
+        }
+        rows.append(row)
+    
+    df = pd.DataFrame(rows)
+    return df.to_csv(index=False).encode('utf-8')

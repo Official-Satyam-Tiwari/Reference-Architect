@@ -1,9 +1,9 @@
 from utils import similarity, check_authors, check_journal_match
-from engines import fetch_crossref, fetch_openalex, fetch_pubmed, fetch_pdf_link
+from engines import fetch_crossref, fetch_openalex, fetch_pubmed, fetch_pdf_link, fetch_semanticscholar, fetch_arxiv
 
 async def process_entry(entry, session, sem):
     """
-    Validates a single BibTeX entry against multiple databases.
+    Validates a single BibTeX entry against 5 databases.
     """
     key = entry.get("ID")
     
@@ -25,20 +25,32 @@ async def process_entry(entry, session, sem):
     doi = entry.get("doi")
     item, source = None, None
     
-    # 1. API Lookups (Tiered)
+    # 1. API Lookups (Tiered Pipeline)
     async with sem:
+        # A. Primary: Crossref
         item, source = await fetch_crossref(session, doi, title)
+        
+        # B. Secondary: OpenAlex
         if not item and title: 
             item, source = await fetch_openalex(session, title)
         
-        # Crossref Alignment Strategy
-        if item and item.get("DOI") and source == "openalex":
+        # C. Specialized: PubMed (Medical)
+        if not item and title: 
+            item, source = await fetch_pubmed(session, title)
+
+        # D. Specialized: arXiv (Physics/CS/Math)
+        if not item and title:
+            item, source = await fetch_arxiv(session, title)
+            
+        # E. Backup: Semantic Scholar (General)
+        if not item and title:
+            item, source = await fetch_semanticscholar(session, title)
+
+        # Crossref Alignment (If found via OpenAlex/S2, check if DOI exists in Crossref for better metadata)
+        if item and item.get("DOI") and source in ["openalex", "semanticscholar"]:
              cr_item, cr_source = await fetch_crossref(session, doi=item["DOI"])
              if cr_item: item, source = cr_item, "crossref-aligned"
         
-        if not item and title: 
-            item, source = await fetch_pubmed(session, title)
-            
         # PDF Discovery
         if item and item.get("DOI"): 
             status["pdf_link"] = await fetch_pdf_link(session, item["DOI"])
@@ -49,9 +61,13 @@ async def process_entry(entry, session, sem):
     status["exists"] = True
     status["resolution"] = source
     status["verified_doi"] = item.get("DOI")
+    status["arxiv_id"] = item.get("arxiv_id")
     
+    # Link Generation
     if status["verified_doi"]:
          status["doi_url"] = f"https://doi.org/{status['verified_doi']}" if "PMID" not in status["verified_doi"] else f"https://pubmed.ncbi.nlm.nih.gov/{status['verified_doi'].replace('PMID:', '')}/"
+    elif status["arxiv_id"]:
+         status["doi_url"] = f"https://arxiv.org/abs/{status['arxiv_id']}"
 
     # Canonical Data Extraction
     cr_title = item.get("title", [""])[0]
@@ -66,7 +82,7 @@ async def process_entry(entry, session, sem):
             cr_authors.append(f"{f}, {g}" if f and g else f)
     cr_author_str = " and ".join(cr_authors)
 
-    # Clean Data for Suggestions
+    # Clean Data
     cr_vol = item.get("volume")
     cr_num = item.get("issue") or item.get("journal-issue", {}).get("issue")
     cr_page = item.get("page")
@@ -77,7 +93,8 @@ async def process_entry(entry, session, sem):
         "volume": str(cr_vol) if cr_vol else None,
         "number": str(cr_num) if cr_num else None,
         "pages": str(cr_page) if cr_page else None,
-        "doi": status["verified_doi"]
+        "doi": status["verified_doi"],
+        "arxiv_id": status["arxiv_id"]
     }
 
     # 3. Verification Logic
@@ -103,7 +120,10 @@ async def process_entry(entry, session, sem):
     score = sum(1 for v in status["field_check"].values() if v["status"] == "ok")
     valid = sum(1 for v in status["field_check"].values() if v["bibtex"])
     
-    if source in ["crossref-doi", "crossref-aligned", "pubmed-full"]:
+    # List of trusted sources for 100% confidence
+    trusted = ["crossref-doi", "crossref-aligned", "pubmed-full", "arxiv", "semanticscholar"]
+    
+    if source in trusted:
         status["confidence"] = 100 if score == valid else int((score/valid)*100) if valid else 50
     else:
         status["confidence"] = int((score/valid)*100) if valid else 50

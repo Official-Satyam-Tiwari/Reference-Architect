@@ -2,3 +2,5 @@ streamlit
 bibtexparser
 aiohttp
 pandas
+xmltodict
+plotly

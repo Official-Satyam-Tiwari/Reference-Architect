@@ -1,9 +1,11 @@
 import aiohttp
 import re
+import xmltodict
 from utils import similarity
 
+# ----------------- PDF ENGINE -----------------
 async def fetch_pdf_link(session, doi):
-    """Tries to find an Open Access PDF using Unpaywall."""
+    """Tries to find OA PDF via Unpaywall."""
     if not doi: return None
     clean_doi = doi.replace("https://doi.org/", "").strip()
     try:
@@ -17,8 +19,67 @@ async def fetch_pdf_link(session, doi):
     except: pass
     return None
 
+# ----------------- SEMANTIC SCHOLAR -----------------
+async def fetch_semanticscholar(session, title):
+    """Fetches metadata from Semantic Scholar Graph API."""
+    url = "https://api.semanticscholar.org/graph/v1/paper/search"
+    params = {"query": title, "limit": 1, "fields": "title,authors,year,venue,externalIds"}
+    try:
+        async with session.get(url, params=params, timeout=5) as r:
+            if r.status == 200:
+                data = await r.json()
+                if data.get("data"):
+                    paper = data["data"][0]
+                    if similarity(title, paper.get("title", "")) > 0.8:
+                        return {
+                            "DOI": paper.get("externalIds", {}).get("DOI"),
+                            "title": [paper.get("title")],
+                            "issued": {"date-parts": [[paper.get("year")]]} if paper.get("year") else {},
+                            "container-title": [paper.get("venue", "")],
+                            "author": [{"family": a["name"]} for a in paper.get("authors", [])]
+                        }, "semanticscholar"
+    except: pass
+    return None, None
+
+# ----------------- ARXIV -----------------
+async def fetch_arxiv(session, title):
+    """Fetches preprints from arXiv API."""
+    url = "http://export.arxiv.org/api/query"
+    params = {"search_query": f"ti:{title}", "max_results": 1}
+    try:
+        async with session.get(url, params=params, timeout=5) as r:
+            if r.status == 200:
+                xml_data = await r.text()
+                data = xmltodict.parse(xml_data)
+                entry = data.get('feed', {}).get('entry')
+                
+                # Handle single entry vs list vs None
+                if entry:
+                    # arXiv ID
+                    arxiv_id = entry.get('id', '').split('/abs/')[-1]
+                    matched_title = entry.get('title', '').replace('\n', ' ').strip()
+                    
+                    if similarity(title, matched_title) > 0.8:
+                        pub_date = entry.get('published', '')[:4] # YYYY
+                        
+                        # Handle author list (might be dict or list)
+                        authors_raw = entry.get('author')
+                        if isinstance(authors_raw, dict): authors_raw = [authors_raw]
+                        authors = [{"family": a.get('name')} for a in authors_raw]
+                        
+                        return {
+                            "DOI": entry.get('arxiv:doi', {}).get('#text') if entry.get('arxiv:doi') else None,
+                            "arxiv_id": arxiv_id,
+                            "title": [matched_title],
+                            "issued": {"date-parts": [[int(pub_date)]]} if pub_date.isdigit() else {},
+                            "container-title": ["arXiv Preprint"],
+                            "author": authors
+                        }, "arxiv"
+    except: pass
+    return None, None
+
+# ----------------- CROSSREF -----------------
 async def fetch_crossref(session, doi=None, title=None):
-    """Fetches metadata from Crossref."""
     try:
         if doi:
             url = f"https://api.crossref.org/works/{doi.lower().strip()}"
@@ -36,8 +97,8 @@ async def fetch_crossref(session, doi=None, title=None):
     except: pass
     return None, None
 
+# ----------------- OPENALEX -----------------
 async def fetch_openalex(session, title):
-    """Fetches metadata from OpenAlex."""
     url = "https://api.openalex.org/works"
     params = {"filter": f"title.search:{title}", "mailto": "agent@streamlit.app"}
     try:
@@ -60,11 +121,10 @@ async def fetch_openalex(session, title):
     except: pass
     return None, None
 
+# ----------------- PUBMED -----------------
 async def fetch_pubmed(session, title):
-    """Fetches metadata from PubMed (E-Utils)."""
     base = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
     try:
-        # Step 1: Search for ID
         async with session.get(f"{base}/esearch.fcgi", params={"db":"pubmed", "term":title, "retmode":"json", "retmax":1}, timeout=5) as r:
             if r.status!=200: return None, None
             data = await r.json()
@@ -72,7 +132,6 @@ async def fetch_pubmed(session, title):
             if not ids: return None, None
             pmid = ids[0]
 
-        # Step 2: Fetch Details
         async with session.get(f"{base}/esummary.fcgi", params={"db":"pubmed", "id":pmid, "retmode":"json"}, timeout=5) as r:
             if r.status!=200: return None, None
             data = await r.json()
