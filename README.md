@@ -4,7 +4,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**BiblioAudit** is a professional citation integrity tool designed for researchers and academics. It automatically validates BibTeX bibliographies against major academic databases (**Crossref**, **OpenAlex**, **PubMed**) to ensure metadata accuracy, fix errors, and discover Open Access PDFs.
+**BiblioAudit** is a professional citation integrity tool designed for researchers and academics. It automatically validates BibTeX bibliographies against major academic databases (**Crossref**, **OpenAlex**, **PubMed**) to ensure metadata accuracy and discover Open Access PDFs.
 
 ---
 
@@ -16,7 +16,6 @@
     * Intelligent Journal Abbreviation matching (e.g., knows that *J. Nucl. Med.* = *Journal of Nuclear Medicine*).
     * Relaxed Year checking ($\pm 1$ year tolerance).
 * **📄 Open Access PDF Discovery:** Automatically finds direct download links for legal, open-access PDFs via Unpaywall.
-* **🛠️ One-Click Fixes:** Generates clean, corrected BibTeX blocks for every erroneous entry, ready to copy-paste.
 * **⚡ Concurrency Control:** Adjustable API speed settings to balance between performance and rate-limit safety.
 * **🛡️ Manual Overrides:** Respects `verified = {true}` tags in your BibTeX to bypass checks for specific entries.
 
