@@ -1,38 +1,37 @@
-# 🧬 BiblioAudit: Citation Health Architect
+# BiblioAudit 🧬
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://streamlit.io)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![DOI](https://zenodo.org/badge/1128307082.svg)](https://doi.org/10.5281/zenodo.18155557)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://biblioaudit.streamlit.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-**BiblioAudit** is a professional citation integrity tool designed for researchers and academics. It automatically validates BibTeX bibliographies against major academic databases (**Crossref**, **OpenAlex**, **PubMed**) to ensure metadata accuracy and discover Open Access PDFs.
+**Automated Reference Integrity & Verification System**
 
----
+BiblioAudit is an open-source tool designed to "stress test" your bibliography before submission. It triangulates citations against **5 major academic databases** to verify existence, correct metadata errors (typos, wrong years), and discover open-access PDFs.
 
-## 🚀 Features
+Checking references manually is tedious and error-prone. BiblioAudit automates this in seconds.
 
-* **🔍 Multi-Engine Verification:** Triangulates citation data using Crossref, OpenAlex, and PubMed APIs to guarantee existence.
-* **🧠 Smart Metadata Matching:**
-    * Fuzzy matching for Titles and Authors (handles typos and formatting differences).
-    * Intelligent Journal Abbreviation matching (e.g., knows that *J. Nucl. Med.* = *Journal of Nuclear Medicine*).
-    * Relaxed Year checking ($\pm 1$ year tolerance).
-* **📄 Open Access PDF Discovery:** Automatically finds direct download links for legal, open-access PDFs via Unpaywall.
-* **⚡ Concurrency Control:** Adjustable API speed settings to balance between performance and rate-limit safety.
-* **🛡️ Manual Overrides:** Respects `verified = {true}` tags in your BibTeX to bypass checks for specific entries.
+## 🚀 Key Features
 
----
+* **🧠 5-Engine Verification Matrix:** Cross-checks citations against:
+    * **Crossref:** Universal DOI validation.
+    * **OpenAlex:** Global knowledge graph matching.
+    * **PubMed:** Specialized for biomedical & life sciences.
+    * **arXiv:** Preprints in Physics, Math, and CS.
+    * **Semantic Scholar:** AI-driven citation ranking.
+* **🔍 Smart Matching:** Uses fuzzy logic and author-specific queries to catch typos without triggering false alarms.
+* **📄 PDF Discovery:** Automatically finds legal, Open Access PDF links for your references via Unpaywall.
+* **📊 Visual Analytics:** View citation timelines and health metrics (Clean vs. Needs Attention) at a glance.
+* **🛡️ Privacy First:** Runs entirely in your browser session. No data is stored or saved.
 
-## 📦 Installation
+## 🛠️ Installation & Local Usage
 
-### Prerequisites
-* Python 3.8 or higher
-* pip
-
-### Local Setup
+You can run BiblioAudit locally on your machine.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/Official-Satyam-Tiwari/BiblioAudit.git](https://github.com/Official-Satyam-Tiwari/BiblioAudit.git)
-    cd BiblioAudit
+    git clone [https://github.com/Official-Satyam-Tiwari/reference-architect.git](https://github.com/Official-Satyam-Tiwari/reference-architect.git)
+    cd reference-architect
     ```
 
 2.  **Install dependencies:**
@@ -48,75 +47,31 @@
 4.  **Open in Browser:**
     The app will automatically open at `http://localhost:8501`.
 
----
+## 📖 How to Use
 
-## 🖥️ Usage Guide
+1.  **Upload:** Drag and drop your `.bib` file into the upload area.
+2.  **Configure:** Use the sidebar to adjust the **Verification Speed** (recommended: "Balanced" at 5 requests/sec).
+3.  **Audit:** Click **"Start Audit"**. The tool will process entries in parallel.
+4.  **Review:**
+    * **Clean Citations:** Entries that matched with high confidence (>90%).
+    * **Needs Attention:** Entries where the Year, Journal, or Title didn't match the official record perfectly.
+    * **Not Found:** Entries that failed verification. Use the auto-generated **Google Scholar** links to check them manually.
+5.  **Export:** Download the full audit report as a CSV file to share with co-authors.
 
-1.  **Upload:** Drag and drop your `.bib` file into the sidebar.
-2.  **Configure:** Adjust the **Verification Speed** slider (keep it lower for large files to avoid API timeouts).
-3.  **Audit:** Click **🚀 Start Verification**.
-4.  **Review Results:**
-    * **📊 Dashboard:** See high-level health metrics.
-    * **⚠️ Attention Needed:** Expand cards to see side-by-side comparisons of your data vs. the official record. Use the **Suggested BibTeX** block to fix errors.
-    * **❌ Unverified:** See entries that couldn't be found anywhere (with links to Google Scholar for manual checking).
+## 📄 Citation
 
----
+If you use BiblioAudit in your research workflow, please cite it using the metadata below:
 
-## ⚙️ How It Works
+> **Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.1.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557**
 
-BiblioAudit uses a tiered confidence scoring system to grade your citations:
-
-$$ \text{Score} = \frac{\text{Matching Fields (Title, Year, Journal, Author)}}{\text{Total Fields Checked}} \times 100 $$
-
-| Score | Status | Meaning |
-| :--- | :--- | :--- |
-| **90-100%** | ✅ Clean | Metadata is perfect. |
-| **50-89%** | ⚠️ Warning | Entry exists, but contains typos, wrong years, or missing fields. |
-| **0%** | ❌ Unverified | Paper could not be found in any supported database. |
-
----
-
-## ☁️ Deployment
-
-This app is optimized for **Streamlit Community Cloud**.
-
-1.  Push your code to a **Private** GitHub repository.
-2.  Login to [share.streamlit.io](https://share.streamlit.io).
-3.  Click **New App** and select your repository.
-4.  Deploy! You will get a secure, shareable URL.
-
-> **Privacy Note:** The app runs entirely in memory. No bibliography data is stored on any server.
-
----
-
-## 📂 Project Structure
-
-```
-BiblioAudit/
-├── app.py              # Main UI and application entry point
-├── processor.py        # Logic for orchestration and grading
-├── engines.py          # API clients (Crossref, OpenAlex, PubMed)
-├── utils.py            # Helper functions for string matching
-└── requirements.txt    # Python dependencies
-```
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please fork the repository and create a pull request for any feature enhancements or bug fixes.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📝 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-Created by [Satyam Tiwari](https://github.com/Official-Satyam-Tiwari)
+**BibTeX:**
+```bibtex
+@software{Tiwari_BiblioAudit_2025,
+  author = {Tiwari, Satyam},
+  title = {{BiblioAudit: Automated Citation Integrity & Verification Tool}},
+  version = {2.1.0},
+  year = {2025},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.18155557},
+  url = {[https://doi.org/10.5281/zenodo.18155557](https://doi.org/10.5281/zenodo.18155557)}
+}
