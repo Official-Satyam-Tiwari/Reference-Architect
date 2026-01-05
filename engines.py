@@ -20,21 +20,22 @@ async def fetch_pdf_link(session, doi):
     return None
 
 # ----------------- SEMANTIC SCHOLAR -----------------
-async def fetch_semanticscholar(session, title):
+async def fetch_semanticscholar(session, title, author=None):
     """Fetches metadata from Semantic Scholar Graph API."""
     url = "https://api.semanticscholar.org/graph/v1/paper/search"
-    params = {"query": title, "limit": 3, "fields": "title,authors,year,venue,externalIds,citationCount"}
+    query = f"{title} {author}" if author else title
+    params = {"query": query, "limit": 5, "fields": "title,authors,year,venue,externalIds,citationCount"}
     try:
         async with session.get(url, params=params, timeout=5) as r:
             if r.status == 200:
                 data = await r.json()
                 items = data.get("data", [])
-                # Sort by citation count to avoid duplicates
+                
+                # Sort by citation count to prioritize the 'real' paper
                 items.sort(key=lambda x: x.get("citationCount", 0), reverse=True)
                 
-                if items:
-                    paper = items[0]
-                    if similarity(title, paper.get("title", "")) > 0.8:
+                for paper in items:
+                    if similarity(title, paper.get("title", "")) > 0.75:
                         return {
                             "DOI": paper.get("externalIds", {}).get("DOI"),
                             "title": [paper.get("title")],
@@ -46,10 +47,13 @@ async def fetch_semanticscholar(session, title):
     return None, None
 
 # ----------------- ARXIV -----------------
-async def fetch_arxiv(session, title):
+async def fetch_arxiv(session, title, author=None):
     """Fetches preprints from arXiv API."""
     url = "http://export.arxiv.org/api/query"
-    params = {"search_query": f"ti:{title}", "max_results": 1}
+    query = f"ti:{title}"
+    if author: query += f" AND au:{author}"
+        
+    params = {"search_query": query, "max_results": 1}
     try:
         async with session.get(url, params=params, timeout=5) as r:
             if r.status == 200:
@@ -57,16 +61,14 @@ async def fetch_arxiv(session, title):
                 data = xmltodict.parse(xml_data)
                 entry = data.get('feed', {}).get('entry')
                 
-                # Handle single entry vs list vs None
                 if entry:
-                    # arXiv ID
+                    if isinstance(entry, list): entry = entry[0]
+                    
                     arxiv_id = entry.get('id', '').split('/abs/')[-1]
                     matched_title = entry.get('title', '').replace('\n', ' ').strip()
                     
-                    if similarity(title, matched_title) > 0.8:
-                        pub_date = entry.get('published', '')[:4] # YYYY
-                        
-                        # Handle author list (might be dict or list)
+                    if similarity(title, matched_title) > 0.75:
+                        pub_date = entry.get('published', '')[:4]
                         authors_raw = entry.get('author')
                         if isinstance(authors_raw, dict): authors_raw = [authors_raw]
                         authors = [{"family": a.get('name')} for a in authors_raw]
@@ -83,61 +85,81 @@ async def fetch_arxiv(session, title):
     return None, None
 
 # ----------------- CROSSREF -----------------
-async def fetch_crossref(session, doi=None, title=None):
+async def fetch_crossref(session, doi=None, title=None, author=None):
     try:
         if doi:
             url = f"https://api.crossref.org/works/{doi.lower().strip()}"
             async with session.get(url, timeout=5) as r:
                 if r.status == 200: return (await r.json())["message"], "crossref-doi"
+        
         if title:
             url = "https://api.crossref.org/works"
-            # Increased rows to 5 to cast a wider net
-            params = {"query.title": title, "rows": 5}
+            query = f"{title} {author}" if author else title
+            # Increased rows to 20 to find buried famous papers
+            params = {"query.bibliographic": query, "rows": 20}
             async with session.get(url, params=params, timeout=5) as r:
                 if r.status == 200:
                     data = await r.json()
                     items = data["message"]["items"]
                     
-                    # --- SMART FIX: Sort by Citation Count ---
-                    # This ensures we pick the "Real" paper (100k citations)
-                    # over a fake/reprint (0 citations)
-                    items.sort(key=lambda x: x.get("is-referenced-by-count", 0), reverse=True)
+                    # Robust Sort: Citations desc, then Year asc (older is usually original)
+                    items.sort(key=lambda x: (
+                        x.get("is-referenced-by-count", 0), 
+                        -1 * x.get("created", {}).get("date-parts", [[3000]])[0][0]
+                    ), reverse=True)
                     
                     for item in items:
-                        if similarity(title, item.get("title", [""])[0]) > 0.8:
+                        if similarity(title, item.get("title", [""])[0]) > 0.75:
                             return item, "crossref-title"
     except: pass
     return None, None
 
 # ----------------- OPENALEX -----------------
-async def fetch_openalex(session, title):
+async def fetch_openalex(session, title, author=None):
+    """
+    Uses OpenAlex Filters for precise matching.
+    """
     url = "https://api.openalex.org/works"
-    params = {"filter": f"title.search:{title}", "mailto": "agent@streamlit.app"}
+    
+    # Construct a precise filter query
+    # This tells OpenAlex: "Title MUST contain X AND Author MUST contain Y"
+    if author:
+        filter_query = f"title.search:{title},author.search:{author}"
+    else:
+        filter_query = f"title.search:{title}"
+        
+    params = {"filter": filter_query, "sort": "cited_by_count:desc", "mailto": "agent@streamlit.app"}
+    
     try:
         async with session.get(url, params=params, timeout=5) as r:
             if r.status == 200:
                 data = await r.json()
                 results = data.get("results", [])
-                if results and similarity(title, results[0].get("display_name", "")) > 0.75:
+                
+                if results:
+                    # Because we sorted by citations, the top result is likely the 'real' one
                     best = results[0]
-                    return {
-                        "DOI": best.get("doi", "").replace("https://doi.org/", ""),
-                        "title": [best.get("display_name")],
-                        "issued": {"date-parts": [[best.get("publication_year")]]},
-                        "container-title": [best.get("primary_location", {}).get("source", {}).get("display_name", "")],
-                        "author": [{"given": a["author"]["display_name"], "family": ""} for a in best.get("authorships", [])],
-                        "volume": best.get("biblio", {}).get("volume"),
-                        "issue": best.get("biblio", {}).get("issue"),
-                        "page": f"{best.get('biblio', {}).get('first_page')}-{best.get('biblio', {}).get('last_page')}" if best.get("biblio", {}).get("first_page") else None
-                    }, "openalex"
+                    if similarity(title, best.get("display_name", "")) > 0.75:
+                        return {
+                            "DOI": best.get("doi", "").replace("https://doi.org/", ""),
+                            "title": [best.get("display_name")],
+                            "issued": {"date-parts": [[best.get("publication_year")]]},
+                            "container-title": [best.get("primary_location", {}).get("source", {}).get("display_name", "")],
+                            "author": [{"given": a["author"]["display_name"], "family": ""} for a in best.get("authorships", [])],
+                            "volume": best.get("biblio", {}).get("volume"),
+                            "issue": best.get("biblio", {}).get("issue"),
+                            "page": f"{best.get('biblio', {}).get('first_page')}-{best.get('biblio', {}).get('last_page')}" if best.get("biblio", {}).get("first_page") else None
+                        }, "openalex"
     except: pass
     return None, None
 
 # ----------------- PUBMED -----------------
-async def fetch_pubmed(session, title):
+async def fetch_pubmed(session, title, author=None):
     base = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+    term = f"{title} AND {author}[Author]" if author else title
+    
     try:
-        async with session.get(f"{base}/esearch.fcgi", params={"db":"pubmed", "term":title, "retmode":"json", "retmax":1}, timeout=5) as r:
+        async with session.get(f"{base}/esearch.fcgi", params={"db":"pubmed", "term":term, "retmode":"json", "retmax":1}, timeout=5) as r:
             if r.status!=200: return None, None
             data = await r.json()
             ids = data.get("esearchresult", {}).get("idlist", [])

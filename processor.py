@@ -7,7 +7,6 @@ async def process_entry(entry, session, sem):
     """
     key = entry.get("ID")
     
-    # 0. Manual Override
     if entry.get("verified", "").lower() == "true":
         return {
             "key": key, "exists": True, "confidence": 100,
@@ -16,46 +15,63 @@ async def process_entry(entry, session, sem):
             "pdf_link": None, "field_check": {}, "clean_data": {}, "warnings": []
         }
 
-    # --- FIX 1: Store original data for fallback (CSV/Search) ---
+    # Store original data
     bibtex_title = entry.get("title", "")
     bibtex_year = entry.get("year", "")
     bibtex_journal = entry.get("journal", "")
+    bibtex_author_raw = entry.get("author", "")
 
     status = {
         "key": key,
-        "bibtex_title": bibtex_title, # <--- Added for Google Scholar Search
-        "bibtex_year": bibtex_year,   # <--- Added for CSV fallback
-        "bibtex_journal": bibtex_journal, # <--- Added for CSV fallback
+        "bibtex_title": bibtex_title, 
+        "bibtex_year": bibtex_year,   
+        "bibtex_journal": bibtex_journal,
         "exists": False, "verified_doi": None, "doi_url": None, "pdf_link": None,
         "resolution": None, "confidence": 0, "field_check": {}, "clean_data": {}, "warnings": []
     }
 
     title = entry.get("title")
     doi = entry.get("doi")
+    
+    # Extract First Author Last Name (e.g., "Vaswani" from "Vaswani, Ashish and...")
+    first_author_lastname = None
+    if bibtex_author_raw:
+        # Split by 'and' to get first author, then split by comma/space
+        first_author = bibtex_author_raw.split(" and ")[0].strip()
+        if "," in first_author:
+            first_author_lastname = first_author.split(",")[0].strip()
+        else:
+            first_author_lastname = first_author.split(" ")[-1].strip()
+    
     item, source = None, None
     
-    # 1. API Lookups (Tiered Pipeline)
+    # 1. API Lookups
     async with sem:
-        # A. Primary: Crossref
-        item, source = await fetch_crossref(session, doi, title)
+        # A. Priority 1: Crossref DOI (Exact Match)
+        if doi:
+            item, source = await fetch_crossref(session, doi=doi)
         
-        # B. Secondary: OpenAlex
-        if not item and title: 
-            item, source = await fetch_openalex(session, title)
-        
-        # C. Specialized: PubMed (Medical)
-        if not item and title: 
-            item, source = await fetch_pubmed(session, title)
-
-        # D. Specialized: arXiv (Physics/CS/Math)
+        # B. Priority 2: Semantic Scholar (Title + Author)
         if not item and title:
-            item, source = await fetch_arxiv(session, title)
+            item, source = await fetch_semanticscholar(session, title, first_author_lastname)
+
+        # C. Priority 3: OpenAlex (Title + Author)
+        if not item and title: 
+            item, source = await fetch_openalex(session, title, first_author_lastname)
             
-        # E. Backup: Semantic Scholar (General)
+        # D. Priority 4: arXiv (Title + Author)
         if not item and title:
-            item, source = await fetch_semanticscholar(session, title)
+            item, source = await fetch_arxiv(session, title, first_author_lastname)
+        
+        # E. Priority 5: Crossref Search (Title + Author)
+        if not item and title:
+            item, source = await fetch_crossref(session, title=title, author=first_author_lastname)
+        
+        # F. Priority 6: PubMed (Medical Specific)
+        if not item and title: 
+            item, source = await fetch_pubmed(session, title, first_author_lastname)
 
-        # Crossref Alignment (If found via OpenAlex/S2, check if DOI exists in Crossref for better metadata)
+        # Crossref Alignment
         if item and item.get("DOI") and source in ["openalex", "semanticscholar"]:
              cr_item, cr_source = await fetch_crossref(session, doi=item["DOI"])
              if cr_item: item, source = cr_item, "crossref-aligned"
@@ -91,7 +107,6 @@ async def process_entry(entry, session, sem):
             cr_authors.append(f"{f}, {g}" if f and g else f)
     cr_author_str = " and ".join(cr_authors)
 
-    # Clean Data
     cr_vol = item.get("volume")
     cr_num = item.get("issue") or item.get("journal-issue", {}).get("issue")
     cr_page = item.get("page")
@@ -129,7 +144,6 @@ async def process_entry(entry, session, sem):
     score = sum(1 for v in status["field_check"].values() if v["status"] == "ok")
     valid = sum(1 for v in status["field_check"].values() if v["bibtex"])
     
-    # List of trusted sources for 100% confidence
     trusted = ["crossref-doi", "crossref-aligned", "pubmed-full", "arxiv", "semanticscholar"]
     
     if source in trusted:
