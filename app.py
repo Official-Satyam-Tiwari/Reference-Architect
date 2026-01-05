@@ -40,7 +40,7 @@ with st.sidebar:
     uploaded_file = st.file_uploader("Upload .bib file", type="bib")
     st.markdown("---")
     
-    concurrency = st.slider("Verification Speed", 1, 10, 5)
+    concurrency = st.slider("Verification Speed", 1, 10, 1)
     st.caption("Lower speed (1-3) is safer for large files to avoid API timeouts.")
     
     st.markdown("---")
