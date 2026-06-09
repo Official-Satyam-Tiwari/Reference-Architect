@@ -30,7 +30,7 @@ You can run BiblioAudit locally on your machine.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/Official-Satyam-Tiwari/reference-architect.git](https://github.com/Official-Satyam-Tiwari/reference-architect.git)
+    git clone https://github.com/Official-Satyam-Tiwari/reference-architect.git
     cd reference-architect
     ```
 
