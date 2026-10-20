@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use BiblioAudit in your research, please cite it using the metadata below."
+authors:
+  - family-names: "Tiwari"
+    given-names: "Satyam"
+    orcid: ""
+    affiliation: "Jagiellonian University"
+title: "BiblioAudit: Automated Citation Integrity & Verification Tool"
+version: 2.2.0
+doi: 10.5281/zenodo.18155557
+date-released: 2026-01-05
+url: "https://github.com/Official-Satyam-Tiwari/Reference-Architect"
+repository-code: "https://github.com/Official-Satyam-Tiwari/Reference-Architect"
+license: MIT
+keywords:
+  - citations
+  - bibliography
+  - bibtex
+  - crossref
+  - openalex
+  - reference-checker
+  - academic-research
