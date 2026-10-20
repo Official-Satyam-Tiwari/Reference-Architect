@@ -1,5 +1,6 @@
 # BiblioAudit
 
+[![PyPI version](https://img.shields.io/pypi/v/biblioaudit.svg)](https://pypi.org/project/biblioaudit/)
 [![DOI](https://zenodo.org/badge/1128307082.svg)](https://doi.org/10.5281/zenodo.18155557)
 [![CI](https://github.com/Official-Satyam-Tiwari/Reference-Architect/actions/workflows/ci.yml/badge.svg)](https://github.com/Official-Satyam-Tiwari/Reference-Architect/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
