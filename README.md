@@ -2,7 +2,6 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/biblioaudit.svg)](https://pypi.org/project/biblioaudit/)
 [![DOI](https://zenodo.org/badge/1128307082.svg)](https://doi.org/10.5281/zenodo.18155557)
-[![CI](https://github.com/Official-Satyam-Tiwari/Reference-Architect/actions/workflows/ci.yml/badge.svg)](https://github.com/Official-Satyam-Tiwari/Reference-Architect/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
@@ -16,7 +15,7 @@ It also includes an automated re-check loop (`--loop`) that repairs metadata, ge
 
 ```text
 ========================================================================
-  BiblioAudit v2.2.0 - Reference Integrity & Verification System
+  BiblioAudit v2.2.1 - Reference Integrity & Verification System
 ========================================================================
   Cascading Triangulation Matrix: 12 Academic Databases
 
@@ -177,7 +176,7 @@ Reference-Architect/
 
 If you use BiblioAudit in your research, please cite:
 
-> Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.2.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557
+> Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.2.1) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557
 
 ```bibtex
 @software{Tiwari_BiblioAudit_2025,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BiblioAudit 🧬
+BiblioAudit
 Automated Reference Integrity & Verification System
 Single-file engine that cross-verifies citations against 12+ major academic databases.
 Uses utility.py for supporting functions.
@@ -40,7 +40,7 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-VERSION = "2.2.0"
+VERSION = "2.2.1"
 USER_AGENT = "BiblioAudit/2.2 (https://github.com/Official-Satyam-Tiwari/reference-architect; mailto:agent@biblioaudit.org)"
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 

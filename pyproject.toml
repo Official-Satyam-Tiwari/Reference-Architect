@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "biblioaudit"
-version = "2.2.0"
+version = "2.2.1"
 authors = [
   { name="Satyam Tiwari", email="satyam.tiwari@doctoral.uj.edu.pl" },
 ]
-description = "Automated reference integrity and citation verification tool"
+description = "Check and verify citations in BibTeX (.bib) files across 12+ academic databases"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
