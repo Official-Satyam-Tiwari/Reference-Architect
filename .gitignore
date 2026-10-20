@@ -1,0 +1,24 @@
+# Bibliographies and reference files (do not push references)
+*.bib
+References/
+references/
+
+# Audit reports and exports
+*.csv
+
+# Python byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
