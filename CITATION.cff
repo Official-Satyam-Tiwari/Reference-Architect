@@ -6,7 +6,7 @@ authors:
     orcid: ""
     affiliation: "Jagiellonian University"
 title: "BiblioAudit: Automated Citation Integrity & Verification Tool"
-version: 2.2.1
+version: 2.2.2
 doi: 10.5281/zenodo.18155557
 date-released: 2026-01-05
 url: "https://github.com/Official-Satyam-Tiwari/Reference-Architect"

@@ -15,7 +15,7 @@ It also includes an automated re-check loop (`--loop`) that repairs metadata, ge
 
 ```text
 ========================================================================
-  BiblioAudit v2.2.1 - Reference Integrity & Verification System
+  BiblioAudit v2.2.2 - Reference Integrity & Verification System
 ========================================================================
   Cascading Triangulation Matrix: 12 Academic Databases
 
@@ -176,13 +176,13 @@ Reference-Architect/
 
 If you use BiblioAudit in your research, please cite:
 
-> Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.2.1) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557
+> Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.2.2) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557
 
 ```bibtex
 @software{Tiwari_BiblioAudit_2025,
   author = {Tiwari, Satyam},
   title = {{BiblioAudit: Automated Citation Integrity & Verification Tool}},
-  version = {2.2.1},
+  version = {2.2.2},
   year = {2025},
   publisher = {Zenodo},
   doi = {10.5281/zenodo.18155557},

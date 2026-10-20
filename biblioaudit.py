@@ -40,7 +40,7 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-VERSION = "2.2.1"
+VERSION = "2.2.2"
 USER_AGENT = "BiblioAudit/2.2 (https://github.com/Official-Satyam-Tiwari/reference-architect; mailto:agent@biblioaudit.org)"
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 
