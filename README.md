@@ -182,7 +182,7 @@ If you use BiblioAudit in your research, please cite:
 @software{Tiwari_BiblioAudit_2025,
   author = {Tiwari, Satyam},
   title = {{BiblioAudit: Automated Citation Integrity & Verification Tool}},
-  version = {2.2.0},
+  version = {2.2.1},
   year = {2025},
   publisher = {Zenodo},
   doi = {10.5281/zenodo.18155557},
