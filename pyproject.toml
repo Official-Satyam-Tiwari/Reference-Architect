@@ -10,11 +10,10 @@ authors = [
 ]
 description = "Automated reference integrity and citation verification tool"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering",
     "Topic :: Text Processing :: Markup :: LaTeX",
@@ -33,3 +32,6 @@ biblioaudit = "biblioaudit:main"
 [project.urls]
 "Homepage" = "https://github.com/Official-Satyam-Tiwari/Reference-Architect"
 "Bug Tracker" = "https://github.com/Official-Satyam-Tiwari/Reference-Architect/issues"
+
+[tool.setuptools]
+py-modules = ["biblioaudit", "utility"]

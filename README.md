@@ -71,6 +71,12 @@ BiblioAudit queries the following scientific databases in parallel:
 
 ## Installation
 
+### From PyPI
+
+```bash
+pip install biblioaudit
+```
+
 ### From Source
 
 1. Clone the repository:
@@ -84,9 +90,9 @@ BiblioAudit queries the following scientific databases in parallel:
    pip install -r requirements.txt
    ```
 
-### Optional Package Install
+### Optional Local Package Install
 
-To make the `biblioaudit` command directly available from anywhere in your terminal:
+To install in editable mode for local development:
 ```bash
 pip install -e .
 ```
