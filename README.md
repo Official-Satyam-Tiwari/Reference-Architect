@@ -1,108 +1,105 @@
-# BiblioAudit 🧬
+# BiblioAudit
 
 [![DOI](https://zenodo.org/badge/1128307082.svg)](https://doi.org/10.5281/zenodo.18155557)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-**Automated Reference Integrity & Verification System**
+BiblioAudit is a command-line tool that checks citations in BibTeX (`.bib`) files. It verifies that references exist, finds missing DOIs, corrects wrong years and journal names, and finds links to open-access PDFs.
 
-BiblioAudit is a high-performance command-line tool designed to "stress test" your bibliography before paper submission. It cross-checks citations against **12+ major academic databases** to verify existence, correct metadata errors (typos, wrong publication years, missing DOIs, journal mismatches), and discover legal open-access PDFs.
-
-Checking references manually is tedious and error-prone. BiblioAudit automates this in seconds with zero GUI overhead.
+It checks references across more than 12 academic databases in parallel and generates a report of all findings.
 
 ---
 
-## 🚀 Key Features
+## Features
 
-* **🧠 12-Database Triangulation Matrix:** Cascading verification across:
-    * **Crossref:** Universal DOI validation and publisher records.
-    * **DataCite:** Datasets, software citations, Zenodo records, and institutional repositories.
-    * **OpenAlex:** Global knowledge graph matching across 250M+ scientific works.
-    * **Semantic Scholar:** AI & Computer Science citation graphs and paper search.
-    * **arXiv:** Preprints in Physics, Mathematics, Computer Science, and Quantitative Biology.
-    * **PubMed:** Specialized for biomedical and life sciences (NLM/NIH).
-    * **Europe PMC:** Clinical literature, medical physics, and European open access.
-    * **DOAJ:** Over 20,000 peer-reviewed open access journals worldwide.
-    * **HAL Open Science:** European multidisciplinary archive (CNRS, INRIA, CEA).
-    * **Zenodo:** Open research software, code, datasets, and CERN-affiliated outputs.
-    * **INSPIRE HEP:** High-energy physics, astrophysics, and quantum theory.
-    * **NASA ADS:** Astrophysics and planetary science literature.
-* **🔍 Smart Matching:** Uses fuzzy sequence matching and author-specific queries to detect typos without triggering false alarms.
-* **📄 PDF Discovery:** Automatically finds legal, Open Access PDF links for your references via Unpaywall.
-* **🛠️ Automatic BibTeX Repair & `doi2bib` Integration:** Export a clean, publisher-standard `.bib` file with standardized DOIs, years, authors, and journals with `--fix-bib`.
-* **🔁 Closed Feedback Loop (`--loop`):** Re-audits the generated fixed library automatically and evaluates convergence metrics.
-* **📊 Comprehensive CSV Audit Report:** Exports full per-reference reports with confidence scores, database sources, and matched links.
-* **⚡ Fast & Lightweight:** Asynchronous parallel querying via `aiohttp` with adjustable concurrency.
+* **Multi-Database Checking:** Checks references across major scientific databases:
+    * **Crossref:** Journal articles, conference proceedings, and books.
+    * **DataCite:** Datasets, software citations, and Zenodo records.
+    * **OpenAlex:** Global index of research publications.
+    * **Semantic Scholar:** Computer science and multidisciplinary papers.
+    * **arXiv:** Physics, mathematics, and computer science preprints.
+    * **PubMed:** Biomedical and medical life sciences.
+    * **Europe PMC:** Open access clinical and life science literature.
+    * **DOAJ:** Directory of Open Access Journals.
+    * **HAL Open Science:** European research archive.
+    * **Zenodo:** Open code, software, datasets, and reports.
+    * **INSPIRE HEP:** High-energy physics and astrophysics.
+    * **NASA ADS:** Astronomy and physics literature.
+* **Typo and Error Detection:** Compares titles, authors, years, and journals to catch typos without false warnings.
+* **Open Access PDF Discovery:** Finds legal, free PDF links using the Unpaywall API.
+* **Automatic BibTeX Fixes:** Exports a corrected `.bib` file with official publisher metadata using `doi2bib`.
+* **Automated Re-check (`--loop`):** Audits the original file, builds a corrected version, re-checks it automatically, and shows a before-and-after comparison.
+* **CSV Reports:** Saves a clear summary report with confidence scores and source links.
 
 ---
 
-## 🛠️ Installation
+## Installation
 
-1. **Clone the repository:**
+1. Clone the repository:
    ```bash
    git clone https://github.com/Official-Satyam-Tiwari/reference-architect.git
    cd reference-architect
    ```
 
-2. **Install dependencies:**
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
 ---
 
-## 📖 CLI Usage
+## Usage
 
-Run BiblioAudit directly from your terminal:
+Run the tool from your terminal:
 
 ```bash
 python biblioaudit.py [path-to-bib-file-or-folder] [options]
 ```
-*(If no path is specified, BiblioAudit automatically checks files in the `References/` directory)*
+
+If you do not specify a path, BiblioAudit automatically checks files in the `References/` folder.
 
 ### Options
 
 | Option | Description | Default |
 |---|---|---|
-| `-o`, `--output` | Path to save the CSV audit report | `<filename>_audit_report.csv` |
-| `--fix-bib` | Path to save a corrected BibTeX library | *(optional)* |
-| `--loop` | Run automated feedback loop: re-audits the corrected file and reports convergence metrics | `False` |
-| `-r`, `--rate` | Maximum concurrent API requests | `4` |
-| `-v`, `--verbose` | Print detailed field-by-field comparison for mismatched entries | `False` |
-| `--version` | Display BiblioAudit version | |
-| `-h`, `--help` | Show command-line help message | |
+| `-o`, `--output` | File path for the CSV report | `<filename>_audit_report.csv` |
+| `--fix-bib` | File path to save corrected BibTeX entries | None |
+| `--loop` | Re-audit the corrected file and show before-and-after results | False |
+| `-r`, `--rate` | Maximum number of concurrent requests | 4 |
+| `-v`, `--verbose` | Print field-by-field differences for mismatched citations | False |
+| `--version` | Show program version | |
+| `-h`, `--help` | Show help message | |
 
 ### Examples
 
-**Basic verification:**
+**Check a single file:**
 ```bash
 python biblioaudit.py References/sn-bibliography.bib
 ```
 
-**Automated Closed Feedback Loop (audit -> fix -> re-audit -> convergence report):**
+**Check a file, fix errors, and run an automated re-check:**
 ```bash
 python biblioaudit.py References/sn-bibliography.bib --loop
 ```
 
-**Generate both a CSV report and a corrected BibTeX file:**
+**Save a CSV report and a corrected BibTeX file:**
 ```bash
-python biblioaudit.py References/sn-bibliography.bib -o audit_report.csv --fix-bib fixed.bib
+python biblioaudit.py References/sn-bibliography.bib -o report.csv --fix-bib fixed.bib
 ```
 
-**Faster processing with detailed diffs for mismatched references:**
+**Run faster with detailed mismatch information:**
 ```bash
 python biblioaudit.py References/sn-bibliography.bib --rate 6 --verbose
 ```
 
 ---
 
-## 📄 Citation
+## Citation
 
-If you use BiblioAudit in your research workflow, please cite it using the metadata below:
+If you use BiblioAudit in your research, please cite:
 
-> **Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.2.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557**
+> Tiwari, S. (2025). BiblioAudit: Automated Citation Integrity & Verification Tool (Version 2.2.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.18155557
 
-**BibTeX:**
 ```bibtex
 @software{Tiwari_BiblioAudit_2025,
   author = {Tiwari, Satyam},
