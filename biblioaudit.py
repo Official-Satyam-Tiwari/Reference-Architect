@@ -585,7 +585,7 @@ async def fetch_inspirehep(session, title, author=None):
                     matched_title = titles[0].get("title", "") if titles else ""
                     if similarity(title, matched_title) > 0.75:
                         dois = meta.get("dois", [])
-                        doi = dois[0].get("doi") if dois and isinstance(dois[0], dict) else (dois[0] if dois else None)
+                        doi = (dois[0].get("value") or dois[0].get("doi")) if dois and isinstance(dois[0], dict) else (dois[0] if dois else None)
                         arxiv_eprints = meta.get("arxiv_eprints", [])
                         arxiv_id = arxiv_eprints[0].get("value") if arxiv_eprints and isinstance(arxiv_eprints[0], dict) else (arxiv_eprints[0] if arxiv_eprints else None)
 
@@ -716,7 +716,8 @@ async def process_entry(entry, session, sem):
         "confidence": 0,
         "field_check": {},
         "clean_data": {},
-        "warnings": []
+        "warnings": [],
+        "original_entry": entry
     }
 
     title = bibtex_title.replace("{", "").replace("}", "").strip()
@@ -1003,14 +1004,22 @@ def audit_file(input_path, output_csv=None, fix_bib=None, rate=4, verbose=False,
             with open(target_fixed_bib, "w", encoding="utf-8") as f:
                 for r in results:
                     clean_data = r.get("clean_data")
-                    if clean_data and r.get("exists"):
+                    conf = r.get("confidence", 0)
+                    if clean_data and r.get("exists") and conf >= 80:
                         f.write(fetch_canonical_bibtex(r["key"], r.get("verified_doi"), clean_data) + "\n\n")
                     else:
-                        f.write(f"@{r.get('entry_type', 'misc')}{{{r['key']},\n")
-                        if r.get("bibtex_title"): f.write(f"  title = {{{r['bibtex_title']}}},\n")
-                        if r.get("bibtex_author"): f.write(f"  author = {{{r['bibtex_author']}}},\n")
-                        if r.get("bibtex_year"): f.write(f"  year = {{{r['bibtex_year']}}},\n")
-                        if r.get("bibtex_journal"): f.write(f"  journal = {{{r['bibtex_journal']}}},\n")
+                        orig = r.get("original_entry") or {}
+                        etype = orig.get("ENTRYTYPE", r.get("entry_type", "misc"))
+                        f.write(f"@{etype}{{{r['key']},\n")
+                        wrote_doi = False
+                        for field, val in orig.items():
+                            if field in ["ENTRYTYPE", "ID"]:
+                                continue
+                            if field.lower() == "doi":
+                                wrote_doi = True
+                            f.write(f"  {field} = {{{val}}},\n")
+                        if not wrote_doi and r.get("verified_doi") and conf >= 70:
+                            f.write(f"  doi = {{{r['verified_doi']}}},\n")
                         f.write("}\n\n")
             print(f"[+] Corrected BibTeX library saved to: {target_fixed_bib}")
         except Exception as e:
